@@ -39,6 +39,7 @@
             this.button4 = new System.Windows.Forms.Button();
             this.textBox_pwd = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.SuspendLayout();
             // 
             // label1
@@ -99,17 +100,17 @@
             // 
             this.textBox_log.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox_log.Location = new System.Drawing.Point(16, 207);
+            this.textBox_log.Location = new System.Drawing.Point(16, 238);
             this.textBox_log.Multiline = true;
             this.textBox_log.Name = "textBox_log";
             this.textBox_log.ReadOnly = true;
             this.textBox_log.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox_log.Size = new System.Drawing.Size(772, 281);
+            this.textBox_log.Size = new System.Drawing.Size(772, 250);
             this.textBox_log.TabIndex = 7;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(16, 146);
+            this.button1.Location = new System.Drawing.Point(14, 135);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(96, 42);
             this.button1.TabIndex = 8;
@@ -119,7 +120,7 @@
             // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(119, 146);
+            this.button4.Location = new System.Drawing.Point(119, 135);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(96, 42);
             this.button4.TabIndex = 9;
@@ -144,12 +145,20 @@
             this.label3.TabIndex = 11;
             this.label3.Text = "密码";
             // 
+            // progressBar1
+            // 
+            this.progressBar1.Location = new System.Drawing.Point(16, 194);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(772, 30);
+            this.progressBar1.TabIndex = 12;
+            // 
             // Form1
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 500);
+            this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.textBox_pwd);
             this.Controls.Add(this.button4);
@@ -182,6 +191,7 @@
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.TextBox textBox_pwd;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ProgressBar progressBar1;
     }
 }
 

@@ -15,6 +15,13 @@ namespace DeepExtract
     internal class Class1
     {
         public const string NEW_LINE = "\r\n";
+        private const int BUFFER_SIZE = 1024 * 512;
+        private TextBox textBox_log;
+        private long totalBytes;
+        private long compressedBytesRead;
+        private long totalCompressedBytesRead;
+        private ProgressBar progressBar;
+
         public enum ArchiveType
         {
             RAR,
@@ -92,9 +99,12 @@ namespace DeepExtract
             return ArchiveType.Unknown;
         }
 
-        public void ExtractRecursive (string fileName, string outputName, string password, TextBox textBox_log, int depth = 0)
+        public void ExtractRecursive (string fileName, string outputName, string password, TextBox textBox_log, ProgressBar progressBar, int depth = 0)
         {
+            this.textBox_log = textBox_log;
+            this.progressBar = progressBar;
             var archiveType = DetectArchiveType (fileName);
+
             using (FileStream stream = File.OpenRead(fileName))
             {
                 if (archiveType == ArchiveType.SevenZip)
@@ -107,34 +117,25 @@ namespace DeepExtract
                         var entries = archive.Entries;
                         var outputNameDepth = outputName; // Path.Combine(outputName);
 
+                        this.totalBytes = archive.TotalSize;
+                        this.compressedBytesRead = 0;
+                        this.totalCompressedBytesRead = 0;
+                        archive.CompressedBytesRead += Archive_CompressedBytesRead;
+                        archive.EntryExtractionBegin += Archive_EntryExtractionBegin;
+                        archive.EntryExtractionEnd += Archive_EntryExtractionEnd;
+
                         foreach (var entry in entries)
                         {
                             if (!entry.IsDirectory)
                             {
                                 var outputFilePath = Path.Combine(outputNameDepth, entry.Key);
                                 Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-
-                                textBox_log.AppendText("Extracting " + outputFilePath + "..." + NEW_LINE);
-                                var readStream = entry.OpenEntryStream();
-                                var writeStream = new FileStream(outputFilePath, FileMode.OpenOrCreate);
-                                byte[] buffer = new byte[4096];
-                                int writtenBytes = 0;
-                                
-                                while (true)
-                                {
-                                    int bytesRead = readStream.Read(buffer, 0, buffer.Length);
-                                    if (bytesRead == 0) break;
-
-                                    writeStream.Write(buffer, 0, bytesRead);
-                                    writtenBytes += bytesRead;
-                                }
-
-                                writeStream.Close();
-                                readStream.Close();
+                               
+                                entry.WriteToFile(outputFilePath);
 
                                 if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
                                 {
-                                    ExtractRecursive(outputFilePath, outputName, password, textBox_log, depth + 1);
+                                    ExtractRecursive(outputFilePath, outputName, password, textBox_log, progressBar, depth + 1);
                                 }
                             }
                         }
@@ -144,6 +145,23 @@ namespace DeepExtract
                     textBox_log.AppendText("不支持的压缩包格式: " + fileName + NEW_LINE);
                 }
             }
+        }
+
+        private void Archive_EntryExtractionEnd(object sender, ArchiveExtractionEventArgs<IArchiveEntry> e)
+        {
+            this.totalCompressedBytesRead += this.compressedBytesRead;
+        }
+
+        private void Archive_EntryExtractionBegin(object sender, ArchiveExtractionEventArgs<IArchiveEntry> e)
+        {
+            textBox_log.AppendText("Extracting " + e.Item.Key + "..." + NEW_LINE);
+        }
+
+        private void Archive_CompressedBytesRead(object sender, CompressedBytesReadEventArgs e)
+        {
+            var p = ((double)e.CompressedBytesRead + this.totalCompressedBytesRead) / totalBytes * 100;
+            progressBar.Value = (int)(p > 100 ? 100 : p);
+            this.compressedBytesRead = e.CompressedBytesRead;
         }
     }
 }

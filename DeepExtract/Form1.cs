@@ -38,7 +38,7 @@ namespace DeepExtract
         {
             try
             {
-                c1.ExtractRecursive(textBox1.Text, textBox2.Text, textBox_pwd.Text, textBox_log);
+                c1.ExtractRecursive(textBox1.Text, textBox2.Text, textBox_pwd.Text, textBox_log, progressBar1);
                 textBox_log.AppendText("解压完毕！" + NEW_LINE);
             } catch (Exception ex)
             {
