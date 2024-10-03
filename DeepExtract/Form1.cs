@@ -8,6 +8,7 @@ namespace DeepExtract
 {
     public partial class Form1 : Form
     {
+        private const string NEW_LINE = "\r\n";
         private Class1 c1 = new Class1();
 
         public Form1()
@@ -38,9 +39,10 @@ namespace DeepExtract
             try
             {
                 c1.ExtractRecursive(textBox1.Text, textBox2.Text, textBox_pwd.Text, textBox_log);
+                textBox_log.AppendText("解压完毕！" + NEW_LINE);
             } catch (Exception ex)
             {
-                textBox_log.Text = ex.Message + "\r\n" + "\r\n";
+                textBox_log.Text = ex.Message + NEW_LINE + NEW_LINE;
                 textBox_log.AppendText(ex.StackTrace);
             }
 

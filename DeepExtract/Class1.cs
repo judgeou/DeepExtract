@@ -14,6 +14,7 @@ namespace DeepExtract
 {
     internal class Class1
     {
+        public const string NEW_LINE = "\r\n";
         public enum ArchiveType
         {
             RAR,
@@ -104,7 +105,7 @@ namespace DeepExtract
                     }))
                     {
                         var entries = archive.Entries;
-                        var outputNameDepth = Path.Combine(outputName, "depth_" + depth);
+                        var outputNameDepth = outputName; // Path.Combine(outputName);
 
                         foreach (var entry in entries)
                         {
@@ -113,8 +114,23 @@ namespace DeepExtract
                                 var outputFilePath = Path.Combine(outputNameDepth, entry.Key);
                                 Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
 
-                                textBox_log.AppendText("Extracting " + outputFilePath + "..." + "\r\n");
-                                entry.WriteToFile(outputFilePath);
+                                textBox_log.AppendText("Extracting " + outputFilePath + "..." + NEW_LINE);
+                                var readStream = entry.OpenEntryStream();
+                                var writeStream = new FileStream(outputFilePath, FileMode.OpenOrCreate);
+                                byte[] buffer = new byte[4096];
+                                int writtenBytes = 0;
+                                
+                                while (true)
+                                {
+                                    int bytesRead = readStream.Read(buffer, 0, buffer.Length);
+                                    if (bytesRead == 0) break;
+
+                                    writeStream.Write(buffer, 0, bytesRead);
+                                    writtenBytes += bytesRead;
+                                }
+
+                                writeStream.Close();
+                                readStream.Close();
 
                                 if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
                                 {
@@ -125,7 +141,7 @@ namespace DeepExtract
                     }
                 }
                 else {
-                    textBox_log.Text = "不支持的压缩包格式";
+                    textBox_log.AppendText("不支持的压缩包格式: " + fileName + NEW_LINE);
                 }
             }
         }
