@@ -156,7 +156,8 @@ namespace DeepExtract
                         {
                             using (var entryStream = reader.OpenEntryStream())
                             {
-                                extractedFileList.Add("Extracting " + reader.Entry.Key + "...");
+                                worker.ReportProgress(-1, "Extracting " + reader.Entry.Key + "...");
+                                
                                 var outputFilePath = Path.Combine(outputNameDepth, reader.Entry.Key);
                                 Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
                                 using (var writer = new FileStream(outputFilePath, FileMode.OpenOrCreate, FileAccess.Write))

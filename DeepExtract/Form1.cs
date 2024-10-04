@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -82,10 +83,16 @@ namespace DeepExtract
 
         private void WorkerExtract_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            progressBar1.Value = e.ProgressPercentage;
-            var list = new List<string>(c1.extractedFileList);
-            var logtext = String.Join("\r\n", list);
-            textBox_log.Text = logtext + "\r\n";
+            if (e.ProgressPercentage >= 0)
+            {
+                progressBar1.Value = e.ProgressPercentage;
+            }
+            if (e.UserState != null)
+            {
+                textBox_log.AppendText((string)e.UserState);
+                textBox_log.AppendText(Environment.NewLine);
+            }
+
             ScrollToBottom(textBox_log);
         }
 
@@ -94,6 +101,8 @@ namespace DeepExtract
             var pwdArray = textBox_pwd.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
             c1.ResetCounter();
             c1.ExtractRecursive(textBox1.Text, textBox2.Text, pwdArray, workerExtract, (int)numericUpDown1.Value, 0);
+
+            OpenDirectory(textBox2.Text);
         }
 
         private void Form1_DragDrop(object sender, DragEventArgs e)
@@ -122,12 +131,18 @@ namespace DeepExtract
             workerExtract.CancelAsync();
         }
 
-        private void button5_Click(object sender, EventArgs e)
+        public void OpenDirectory(string path)
         {
-            if (Clipboard.ContainsText())
+            var process = new Process
             {
-                textBox_pwd.Text = Clipboard.GetText();
-            }
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true,
+                    Verb = "open"
+                }
+            };
+            process.Start();
         }
     }
 }
