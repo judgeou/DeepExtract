@@ -1,4 +1,5 @@
-﻿using SharpCompress.Archives;
+﻿using SharpCompress;
+using SharpCompress.Archives;
 using SharpCompress.Archives.Rar;
 using SharpCompress.Archives.SevenZip;
 using SharpCompress.Archives.Zip;
@@ -148,33 +149,33 @@ namespace DeepExtract
                     // reader.EntryExtractionEnd += Archive_EntryExtractionEnd;
                     while (reader.MoveToNextEntry())
                     {
-                        if (!worker.CancellationPending)
+                        if (!reader.Entry.IsDirectory)
                         {
-                            if (reader.Entry.IsDirectory)
+                            using (var entryStream = reader.OpenEntryStream())
                             {
+                                extractedFileList.Add("Extracting " + reader.Entry.Key + "...");
                                 var outputFilePath = Path.Combine(outputNameDepth, reader.Entry.Key);
-                                Directory.CreateDirectory(outputFilePath);
-
-                            } else
-                            {
-                                using (var entryStream = reader.OpenEntryStream())
+                                Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
+                                using (var writer = new FileStream(outputFilePath, FileMode.OpenOrCreate, FileAccess.Write))
                                 {
-                                    extractedFileList.Add("Extracting " + reader.Entry.Key + "...");
-                                    var outputFilePath = Path.Combine(outputNameDepth, reader.Entry.Key);
-                                    using (var writer = new FileStream(outputFilePath, FileMode.OpenOrCreate, FileAccess.Write))
-                                    {
-                                        CopyStreamWithProgress(entryStream, writer);
-                                    }
+                                    CopyStreamWithProgress(entryStream, writer);
 
-                                    if (maxdepth > 1)
+                                    if (worker.CancellationPending)
                                     {
-                                        if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
-                                        {
-                                            ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
-                                        }
+                                        reader.Cancel();
+                                        break;
+                                    }
+                                }
+
+                                if (maxdepth > 1)
+                                {
+                                    if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
+                                    {
+                                        ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
                                     }
                                 }
                             }
+
                             
                         }
                     }
@@ -196,6 +197,11 @@ namespace DeepExtract
                 var p = (double)totalBytesRead / totalBytes * 100;
                 worker.ReportProgress((int)(p > 100 ? 100 : p));
                 // this.compressedBytesRead = e.CompressedBytesRead;
+
+                if (worker.CancellationPending)
+                {
+                    break;
+                }
             }
         }
 
