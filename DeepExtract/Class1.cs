@@ -4,6 +4,7 @@ using SharpCompress.Common;
 using SharpCompress.Readers;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,11 +17,12 @@ namespace DeepExtract
     {
         public const string NEW_LINE = "\r\n";
         private const int BUFFER_SIZE = 1024 * 512;
-        private TextBox textBox_log;
+
         private long totalBytes;
         private long compressedBytesRead;
         private long totalCompressedBytesRead;
-        private ProgressBar progressBar;
+        public IList<string> extractedFileList = new List<string>();
+        private BackgroundWorker worker;
 
         public enum ArchiveType
         {
@@ -99,10 +101,9 @@ namespace DeepExtract
             return ArchiveType.Unknown;
         }
 
-        public void ExtractRecursive (string fileName, string outputName, string password, TextBox textBox_log, ProgressBar progressBar, int depth = 0)
+        public void ExtractRecursive (string fileName, string outputName, string password, BackgroundWorker worker, int depth = 0)
         {
-            this.textBox_log = textBox_log;
-            this.progressBar = progressBar;
+            this.worker = worker;
             var archiveType = DetectArchiveType (fileName);
 
             using (FileStream stream = File.OpenRead(fileName))
@@ -126,7 +127,7 @@ namespace DeepExtract
 
                         foreach (var entry in entries)
                         {
-                            if (!entry.IsDirectory)
+                            if (!entry.IsDirectory && !worker.CancellationPending)
                             {
                                 var outputFilePath = Path.Combine(outputNameDepth, entry.Key);
                                 Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
@@ -135,14 +136,15 @@ namespace DeepExtract
 
                                 if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
                                 {
-                                    ExtractRecursive(outputFilePath, outputName, password, textBox_log, progressBar, depth + 1);
+                                    ExtractRecursive(outputFilePath, outputName, password, worker, depth + 1);
                                 }
                             }
                         }
                     }
                 }
                 else {
-                    textBox_log.AppendText("不支持的压缩包格式: " + fileName + NEW_LINE);
+                    extractedFileList.Add("不支持的压缩包格式: " + fileName);
+                    // textBox_log.AppendText("不支持的压缩包格式: " + fileName + NEW_LINE);
                 }
             }
         }
@@ -154,13 +156,14 @@ namespace DeepExtract
 
         private void Archive_EntryExtractionBegin(object sender, ArchiveExtractionEventArgs<IArchiveEntry> e)
         {
-            textBox_log.AppendText("Extracting " + e.Item.Key + "..." + NEW_LINE);
+            extractedFileList.Add("Extracting " + e.Item.Key + "...");
+            // textBox_log.AppendText("Extracting " + e.Item.Key + "..." + NEW_LINE);
         }
 
         private void Archive_CompressedBytesRead(object sender, CompressedBytesReadEventArgs e)
         {
             var p = ((double)e.CompressedBytesRead + this.totalCompressedBytesRead) / totalBytes * 100;
-            progressBar.Value = (int)(p > 100 ? 100 : p);
+            worker.ReportProgress((int)(p > 100 ? 100 : p));
             this.compressedBytesRead = e.CompressedBytesRead;
         }
     }
