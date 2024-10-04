@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace DeepExtract
 {
@@ -21,8 +22,7 @@ namespace DeepExtract
         private const int BUFFER_SIZE = 1024 * 512;
 
         private long totalBytes;
-        private long compressedBytesRead;
-        private long totalCompressedBytesRead;
+        private long totalBytesRead;
         public IList<string> extractedFileList = new List<string>();
         private BackgroundWorker worker;
 
@@ -125,8 +125,7 @@ namespace DeepExtract
 
         public void ResetCounter() {
             this.totalBytes = 0;
-            this.compressedBytesRead = 0;
-            this.totalCompressedBytesRead = 0;
+            this.totalBytesRead = 0;
         }
 
         public void ExtractRecursive (string fileName, string outputName, string password, BackgroundWorker worker, int maxdepth)
@@ -141,50 +140,65 @@ namespace DeepExtract
                 var entries = archive.Entries;
                 var outputNameDepth = outputName; // Path.Combine(outputName);
 
-                this.totalBytes += archive.TotalSize;
-                this.compressedBytesRead = 0;
-                this.totalCompressedBytesRead = 0;
-                archive.CompressedBytesRead += Archive_CompressedBytesRead;
-                archive.EntryExtractionBegin += Archive_EntryExtractionBegin;
-                archive.EntryExtractionEnd += Archive_EntryExtractionEnd;
+                this.totalBytes += archive.TotalUncompressSize;
 
-                foreach (var entry in entries)
+                using (var reader = archive.ExtractAllEntries())
                 {
-                    if (!entry.IsDirectory && !worker.CancellationPending)
+                    // reader.FilePartExtractionBegin += Archive_EntryExtractionBegin;
+                    // reader.EntryExtractionEnd += Archive_EntryExtractionEnd;
+                    while (reader.MoveToNextEntry())
                     {
-                        var outputFilePath = Path.Combine(outputNameDepth, entry.Key);
-                        Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-
-                        entry.WriteToFile(outputFilePath);
-
-                        if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
+                        if (!worker.CancellationPending)
                         {
-                            if (maxdepth > 1)
+                            if (reader.Entry.IsDirectory)
                             {
-                                ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
+                                var outputFilePath = Path.Combine(outputNameDepth, reader.Entry.Key);
+                                Directory.CreateDirectory(outputFilePath);
+
+                            } else
+                            {
+                                using (var entryStream = reader.OpenEntryStream())
+                                {
+                                    extractedFileList.Add("Extracting " + reader.Entry.Key + "...");
+                                    var outputFilePath = Path.Combine(outputNameDepth, reader.Entry.Key);
+                                    using (var writer = new FileStream(outputFilePath, FileMode.OpenOrCreate, FileAccess.Write))
+                                    {
+                                        CopyStreamWithProgress(entryStream, writer);
+                                    }
+
+                                    if (maxdepth > 1)
+                                    {
+                                        if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
+                                        {
+                                            ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
+                                        }
+                                    }
+                                }
                             }
+                            
                         }
                     }
                 }
             }
         }
 
-        private void Archive_EntryExtractionEnd(object sender, ArchiveExtractionEventArgs<IArchiveEntry> e)
+        private void CopyStreamWithProgress(Stream sourceStream, Stream destinationStream)
         {
-            this.totalCompressedBytesRead += this.compressedBytesRead;
+            byte[] buffer = new byte[BUFFER_SIZE];
+            // long totalBytes = sourceStream.Length;
+            int bytesRead;
+
+            while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                destinationStream.Write(buffer, 0, bytesRead);
+                totalBytesRead += bytesRead;
+
+                var p = (double)totalBytesRead / totalBytes * 100;
+                worker.ReportProgress((int)(p > 100 ? 100 : p));
+                // this.compressedBytesRead = e.CompressedBytesRead;
+            }
         }
 
-        private void Archive_EntryExtractionBegin(object sender, ArchiveExtractionEventArgs<IArchiveEntry> e)
-        {
-            extractedFileList.Add("Extracting " + e.Item.Key + "...");
-            // textBox_log.AppendText("Extracting " + e.Item.Key + "..." + NEW_LINE);
-        }
-
-        private void Archive_CompressedBytesRead(object sender, CompressedBytesReadEventArgs e)
-        {
-            var p = ((double)e.CompressedBytesRead + this.totalCompressedBytesRead) / totalBytes * 100;
-            worker.ReportProgress((int)(p > 100 ? 100 : p));
-            this.compressedBytesRead = e.CompressedBytesRead;
-        }
+        
     }
 }

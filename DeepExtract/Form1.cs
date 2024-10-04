@@ -70,12 +70,24 @@ namespace DeepExtract
             button1.Enabled = true;
         }
 
+        private void ScrollToBottom(TextBox textBox)
+        {
+            // Get the length of the text in the TextBox
+            int length = textBox.TextLength;
+
+            // Scroll to the end of the text
+            textBox.SelectionStart = length;
+            textBox.SelectionLength = 0;
+            textBox.ScrollToCaret();
+        }
+
         private void WorkerExtract_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             progressBar1.Value = e.ProgressPercentage;
             var list = new List<string>(c1.extractedFileList);
             var logtext = String.Join("\r\n", list);
             textBox_log.Text = logtext + "\r\n";
+            ScrollToBottom(textBox_log);
         }
 
         private void WorkerExtract_DoWork(object sender, DoWorkEventArgs e)
@@ -108,6 +120,14 @@ namespace DeepExtract
         private void button4_Click(object sender, EventArgs e)
         {
             workerExtract.CancelAsync();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            if (Clipboard.ContainsText())
+            {
+                textBox_pwd.Text = Clipboard.GetText();
+            }
         }
     }
 }
