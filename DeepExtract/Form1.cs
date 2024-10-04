@@ -1,5 +1,6 @@
 ﻿using SharpCompress.Archives.Rar;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -72,12 +73,14 @@ namespace DeepExtract
         private void WorkerExtract_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             progressBar1.Value = e.ProgressPercentage;
-            var logtext = String.Join("\r\n", c1.extractedFileList);
+            var list = new List<string>(c1.extractedFileList);
+            var logtext = String.Join("\r\n", list);
             textBox_log.Text = logtext + "\r\n";
         }
 
         private void WorkerExtract_DoWork(object sender, DoWorkEventArgs e)
         {
+            c1.ResetCounter();
             c1.ExtractRecursive(textBox1.Text, textBox2.Text, textBox_pwd.Text, workerExtract, (int)numericUpDown1.Value);
         }
 

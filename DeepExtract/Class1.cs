@@ -1,5 +1,7 @@
 ﻿using SharpCompress.Archives;
+using SharpCompress.Archives.Rar;
 using SharpCompress.Archives.SevenZip;
+using SharpCompress.Archives.Zip;
 using SharpCompress.Common;
 using SharpCompress.Readers;
 using System;
@@ -101,53 +103,68 @@ namespace DeepExtract
             return ArchiveType.Unknown;
         }
 
+        public IArchive OpenArchive (string fileName, ReaderOptions options)
+        {
+            var archiveType = DetectArchiveType(fileName);
+            if (archiveType == ArchiveType.SevenZip)
+            {
+                FileStream stream = File.OpenRead(fileName);
+                return SevenZipArchive.Open(stream, options);
+            } else if (archiveType == ArchiveType.Zip) {
+                FileStream stream = File.OpenRead(fileName);
+                return ZipArchive.Open(stream, options);
+            } else if (archiveType == ArchiveType.RAR)
+            {
+                FileStream stream = File.OpenRead(fileName);
+                return RarArchive.Open(stream, options);
+            }
+            {
+                throw new Exception("不支持的压缩包格式: " + fileName);
+            }
+        }
+
+        public void ResetCounter() {
+            this.totalBytes = 0;
+            this.compressedBytesRead = 0;
+            this.totalCompressedBytesRead = 0;
+        }
+
         public void ExtractRecursive (string fileName, string outputName, string password, BackgroundWorker worker, int maxdepth)
         {
             this.worker = worker;
-            var archiveType = DetectArchiveType (fileName);
-
-            using (FileStream stream = File.OpenRead(fileName))
+            using (var archive = OpenArchive(fileName, new ReaderOptions()
             {
-                if (archiveType == ArchiveType.SevenZip)
+                Password = password.Length > 0 ? password : null,
+                LeaveStreamOpen = false
+            }))
+            {
+                var entries = archive.Entries;
+                var outputNameDepth = outputName; // Path.Combine(outputName);
+
+                this.totalBytes += archive.TotalSize;
+                this.compressedBytesRead = 0;
+                this.totalCompressedBytesRead = 0;
+                archive.CompressedBytesRead += Archive_CompressedBytesRead;
+                archive.EntryExtractionBegin += Archive_EntryExtractionBegin;
+                archive.EntryExtractionEnd += Archive_EntryExtractionEnd;
+
+                foreach (var entry in entries)
                 {
-                    using (var archive = SevenZipArchive.Open(stream, new ReaderOptions()
+                    if (!entry.IsDirectory && !worker.CancellationPending)
                     {
-                        Password = password.Length > 0 ? password : null
-                    }))
-                    {
-                        var entries = archive.Entries;
-                        var outputNameDepth = outputName; // Path.Combine(outputName);
+                        var outputFilePath = Path.Combine(outputNameDepth, entry.Key);
+                        Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
 
-                        this.totalBytes = archive.TotalSize;
-                        this.compressedBytesRead = 0;
-                        this.totalCompressedBytesRead = 0;
-                        archive.CompressedBytesRead += Archive_CompressedBytesRead;
-                        archive.EntryExtractionBegin += Archive_EntryExtractionBegin;
-                        archive.EntryExtractionEnd += Archive_EntryExtractionEnd;
+                        entry.WriteToFile(outputFilePath);
 
-                        foreach (var entry in entries)
+                        if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
                         {
-                            if (!entry.IsDirectory && !worker.CancellationPending)
+                            if (maxdepth > 1)
                             {
-                                var outputFilePath = Path.Combine(outputNameDepth, entry.Key);
-                                Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-                               
-                                entry.WriteToFile(outputFilePath);
-
-                                if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
-                                {
-                                    if (maxdepth > 1)
-                                    {
-                                        ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
-                                    }
-                                }
+                                ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
                             }
                         }
                     }
-                }
-                else {
-                    throw new Exception("不支持的压缩包格式: " + fileName);
-                    // textBox_log.AppendText("不支持的压缩包格式: " + fileName + NEW_LINE);
                 }
             }
         }
