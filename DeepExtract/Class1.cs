@@ -24,6 +24,7 @@ namespace DeepExtract
         private long totalBytes;
         private long totalBytesRead;
         public IList<string> extractedFileList = new List<string>();
+        private Stack<string> archiveQueue = new Stack<string>();
         private BackgroundWorker worker;
 
         public enum ArchiveType
@@ -108,15 +109,15 @@ namespace DeepExtract
             var archiveType = DetectArchiveType(fileName);
             if (archiveType == ArchiveType.SevenZip)
             {
-                FileStream stream = File.OpenRead(fileName);
-                return SevenZipArchive.Open(stream, options);
+                // FileStream stream = File.OpenRead(fileName);
+                return SevenZipArchive.Open(fileName, options);
             } else if (archiveType == ArchiveType.Zip) {
-                FileStream stream = File.OpenRead(fileName);
-                return ZipArchive.Open(stream, options);
+                // FileStream stream = File.OpenRead(fileName);
+                return ZipArchive.Open(fileName, options);
             } else if (archiveType == ArchiveType.RAR)
             {
-                FileStream stream = File.OpenRead(fileName);
-                return RarArchive.Open(stream, options);
+                // FileStream stream = File.OpenRead(fileName);
+                return RarArchive.Open(fileName, options);
             }
             {
                 throw new Exception("不支持的压缩包格式: " + fileName);
@@ -126,6 +127,7 @@ namespace DeepExtract
         public void ResetCounter() {
             this.totalBytes = 0;
             this.totalBytesRead = 0;
+            archiveQueue.Clear();
         }
 
         public void ExtractRecursive (string fileName, string outputName, string[] pwdArray, BackgroundWorker worker, int maxdepth, int beginPasswordIndex)
@@ -135,7 +137,8 @@ namespace DeepExtract
             using (var archive = OpenArchive(fileName, new ReaderOptions()
             {
                 Password = password.Length > 0 ? password : null,
-                LeaveStreamOpen = false
+                LeaveStreamOpen = false,
+                LookForHeader = true,
             }))
             {
                 var entries = archive.Entries;
@@ -171,15 +174,20 @@ namespace DeepExtract
                                 {
                                     if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
                                     {
-                                        ExtractRecursive(outputFilePath, outputName, pwdArray, worker, maxdepth - 1, beginPasswordIndex + 1);
+                                        // ExtractRecursive(outputFilePath, outputName, pwdArray, worker, maxdepth - 1, beginPasswordIndex + 1);
+                                        archiveQueue.Push(outputFilePath);
                                     }
                                 }
                             }
-
-                            
                         }
                     }
                 }
+            }
+
+            if (archiveQueue.Count >= 1)
+            {
+                var archiveFilePath = archiveQueue.Pop();
+                ExtractRecursive(archiveFilePath, outputName, pwdArray, worker, maxdepth - 1, beginPasswordIndex + 1);
             }
         }
 
