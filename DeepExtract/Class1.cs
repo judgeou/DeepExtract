@@ -101,7 +101,7 @@ namespace DeepExtract
             return ArchiveType.Unknown;
         }
 
-        public void ExtractRecursive (string fileName, string outputName, string password, BackgroundWorker worker, int depth = 0)
+        public void ExtractRecursive (string fileName, string outputName, string password, BackgroundWorker worker, int maxdepth)
         {
             this.worker = worker;
             var archiveType = DetectArchiveType (fileName);
@@ -136,14 +136,17 @@ namespace DeepExtract
 
                                 if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
                                 {
-                                    ExtractRecursive(outputFilePath, outputName, password, worker, depth + 1);
+                                    if (maxdepth > 1)
+                                    {
+                                        ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
+                                    }
                                 }
                             }
                         }
                     }
                 }
                 else {
-                    extractedFileList.Add("不支持的压缩包格式: " + fileName);
+                    throw new Exception("不支持的压缩包格式: " + fileName);
                     // textBox_log.AppendText("不支持的压缩包格式: " + fileName + NEW_LINE);
                 }
             }

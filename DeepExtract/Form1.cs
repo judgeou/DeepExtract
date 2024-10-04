@@ -78,7 +78,7 @@ namespace DeepExtract
 
         private void WorkerExtract_DoWork(object sender, DoWorkEventArgs e)
         {
-            c1.ExtractRecursive(textBox1.Text, textBox2.Text, textBox_pwd.Text, workerExtract);
+            c1.ExtractRecursive(textBox1.Text, textBox2.Text, textBox_pwd.Text, workerExtract, (int)numericUpDown1.Value);
         }
 
         private void Form1_DragDrop(object sender, DragEventArgs e)

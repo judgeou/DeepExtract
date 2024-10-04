@@ -40,6 +40,9 @@
             this.textBox_pwd = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
+            this.label4 = new System.Windows.Forms.Label();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -153,12 +156,41 @@
             this.progressBar1.Size = new System.Drawing.Size(772, 30);
             this.progressBar1.TabIndex = 12;
             // 
+            // numericUpDown1
+            // 
+            this.numericUpDown1.Location = new System.Drawing.Point(668, 147);
+            this.numericUpDown1.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numericUpDown1.Name = "numericUpDown1";
+            this.numericUpDown1.Size = new System.Drawing.Size(120, 25);
+            this.numericUpDown1.TabIndex = 13;
+            this.numericUpDown1.Value = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("微软雅黑", 10.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label4.Location = new System.Drawing.Point(581, 148);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(82, 24);
+            this.label4.TabIndex = 14;
+            this.label4.Text = "解压深度";
+            // 
             // Form1
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 500);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.numericUpDown1);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.textBox_pwd);
@@ -175,6 +207,7 @@
             this.Text = "DeepExtract";
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Form1_DragEnter);
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -193,6 +226,8 @@
         private System.Windows.Forms.TextBox textBox_pwd;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.NumericUpDown numericUpDown1;
+        private System.Windows.Forms.Label label4;
     }
 }
 
