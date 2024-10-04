@@ -19,7 +19,6 @@ namespace DeepExtract
 {
     internal class Class1
     {
-        public const string NEW_LINE = "\r\n";
         private const int BUFFER_SIZE = 1024 * 512;
 
         private long totalBytes;
@@ -129,9 +128,10 @@ namespace DeepExtract
             this.totalBytesRead = 0;
         }
 
-        public void ExtractRecursive (string fileName, string outputName, string password, BackgroundWorker worker, int maxdepth)
+        public void ExtractRecursive (string fileName, string outputName, string[] pwdArray, BackgroundWorker worker, int maxdepth, int beginPasswordIndex)
         {
             this.worker = worker;
+            var password = pwdArray[beginPasswordIndex % pwdArray.Length];
             using (var archive = OpenArchive(fileName, new ReaderOptions()
             {
                 Password = password.Length > 0 ? password : null,
@@ -171,7 +171,7 @@ namespace DeepExtract
                                 {
                                     if (DetectArchiveType(outputFilePath) != ArchiveType.Unknown)
                                     {
-                                        ExtractRecursive(outputFilePath, outputName, password, worker, maxdepth - 1);
+                                        ExtractRecursive(outputFilePath, outputName, pwdArray, worker, maxdepth - 1, beginPasswordIndex + 1);
                                     }
                                 }
                             }

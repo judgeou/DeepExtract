@@ -10,7 +10,6 @@ namespace DeepExtract
 {
     public partial class Form1 : Form
     {
-        private const string NEW_LINE = "\r\n";
         private Class1 c1 = new Class1();
         private BackgroundWorker workerExtract;
 
@@ -60,11 +59,11 @@ namespace DeepExtract
         {
             if (e.Error != null)
             {
-                textBox_log.Text = e.Error.Message + NEW_LINE + NEW_LINE;
+                textBox_log.Text = e.Error.Message + Environment.NewLine + Environment.NewLine;
                 textBox_log.AppendText(e.Error.StackTrace);
             } else
             {
-                textBox_log.AppendText("解压完毕！" + NEW_LINE);
+                textBox_log.AppendText("解压完毕！" + Environment.NewLine);
             }
 
             button1.Enabled = true;
@@ -92,8 +91,9 @@ namespace DeepExtract
 
         private void WorkerExtract_DoWork(object sender, DoWorkEventArgs e)
         {
+            var pwdArray = textBox_pwd.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
             c1.ResetCounter();
-            c1.ExtractRecursive(textBox1.Text, textBox2.Text, textBox_pwd.Text, workerExtract, (int)numericUpDown1.Value);
+            c1.ExtractRecursive(textBox1.Text, textBox2.Text, pwdArray, workerExtract, (int)numericUpDown1.Value, 0);
         }
 
         private void Form1_DragDrop(object sender, DragEventArgs e)
