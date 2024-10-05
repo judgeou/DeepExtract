@@ -1,6 +1,7 @@
 ﻿using SharpCompress.Archives.Rar;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -155,15 +156,31 @@ namespace DeepExtract
 
         private void LoadPasswordHistory()
         {
-            if (File.Exists(filePath))
+            if (Properties.Settings.Default.解压密码 != null)
             {
-                passwordHistory = File.ReadAllLines(filePath).ToList();
+                foreach (string password in Properties.Settings.Default.解压密码)
+                {
+                    // 这里可以将历史密码加载到列表中
+                    passwordHistory.Add(password);
+                }
             }
         }
 
         private void SavePasswordHistory()
         {
-            File.WriteAllLines(filePath, passwordHistory);
+            if (Properties.Settings.Default.解压密码 == null)
+            {
+                Properties.Settings.Default.解压密码 = new StringCollection();
+            }
+
+            Properties.Settings.Default.解压密码.Clear();
+            foreach (string password in passwordHistory)
+            {
+                Properties.Settings.Default.解压密码.Add(password);
+            }
+
+            // 保存到用户设置
+            Properties.Settings.Default.Save();
         }
 
         private void AddPasswordToHistory(string password)
@@ -180,13 +197,22 @@ namespace DeepExtract
             // 清空之前的菜单项
             contextMenuStrip1.Items.Clear();
 
-            // 为每个历史密码创建一个菜单项
-            foreach (var password in passwordHistory)
+            if (passwordHistory.Count == 0)
             {
-                var item = new ToolStripMenuItem(password);
-                item.Click += Item_Click;
+                var item = new ToolStripMenuItem("无历史解压密码");
+                item.Enabled = false;
                 contextMenuStrip1.Items.Add(item);
+            } else
+            {
+                // 为每个历史密码创建一个菜单项
+                foreach (var password in passwordHistory)
+                {
+                    var item = new ToolStripMenuItem(password);
+                    item.Click += Item_Click;
+                    contextMenuStrip1.Items.Add(item);
+                }
             }
+     
         }
 
         private void Item_Click(object sender, EventArgs e)
