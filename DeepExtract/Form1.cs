@@ -13,10 +13,14 @@ namespace DeepExtract
     {
         private Class1 c1 = new Class1();
         private BackgroundWorker workerExtract;
+        private string filePath = "passwordHistory.txt";
+        private List<string> passwordHistory = new List<string>();
 
         public Form1()
         {
             InitializeComponent();
+
+            LoadPasswordHistory();
         }
 
         private void setArchivePath (string path)
@@ -98,10 +102,14 @@ namespace DeepExtract
 
         private void WorkerExtract_DoWork(object sender, DoWorkEventArgs e)
         {
-            var pwdArray = textBox_pwd.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            var pwdArray = textBox_pwd.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None).Where(s => !string.IsNullOrEmpty(s)).ToArray();
             c1.ResetCounter();
             c1.ExtractRecursive(textBox1.Text, textBox2.Text, pwdArray, workerExtract, (int)numericUpDown1.Value, 0);
 
+            foreach (var pwd in pwdArray)
+            {
+                AddPasswordToHistory(pwd);
+            }
             OpenDirectory(textBox2.Text);
         }
 
@@ -143,6 +151,48 @@ namespace DeepExtract
                 }
             };
             process.Start();
+        }
+
+        private void LoadPasswordHistory()
+        {
+            if (File.Exists(filePath))
+            {
+                passwordHistory = File.ReadAllLines(filePath).ToList();
+            }
+        }
+
+        private void SavePasswordHistory()
+        {
+            File.WriteAllLines(filePath, passwordHistory);
+        }
+
+        private void AddPasswordToHistory(string password)
+        {
+            if (!passwordHistory.Contains(password))
+            {
+                passwordHistory.Add(password);
+                SavePasswordHistory();
+            }
+        }
+
+        private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
+        {
+            // 清空之前的菜单项
+            contextMenuStrip1.Items.Clear();
+
+            // 为每个历史密码创建一个菜单项
+            foreach (var password in passwordHistory)
+            {
+                var item = new ToolStripMenuItem(password);
+                item.Click += Item_Click;
+                contextMenuStrip1.Items.Add(item);
+            }
+        }
+
+        private void Item_Click(object sender, EventArgs e)
+        {
+            var item = (ToolStripMenuItem)sender;
+            textBox_pwd.AppendText(item.Text + Environment.NewLine);
         }
     }
 }
